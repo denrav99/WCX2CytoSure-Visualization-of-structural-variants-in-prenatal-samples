@@ -1,0 +1,76 @@
+# Read in bedfiles
+library(ggplot2)
+install.packages("qqman")
+library(qqman)
+library(dplyr)
+library(boot)
+
+############################################
+#### read files and split by chromosome ####
+############################################
+wm.WCXpredict_bins <- read.delim("<bedfile>")
+raw_chromosomes_500kb <- split(wm.WCXpredict_bins, wm.WCXpredict_bins$chr)
+
+wm_13_500kb <- raw_chromosomes_500kb[["13"]]
+wm_18_500kb <- raw_chromosomes_500kb[["18"]]
+wm_21_500kb <- raw_chromosomes_500kb[["21"]]
+wm_X_500kb <- raw_chromosomes_500kb[["X"]]
+wm_22_500kb <- raw_chromosomes_500kb[["22"]]
+
+###########################
+#### plot raw coverage ####
+###########################
+
+ggplot(wm_21_500kb, aes(x=start, y=ratio))+ geom_point(color="blue") + ylim(-0.25, 0.25)+
+  geom_hline(aes(yintercept = 0.05, color = "FF = 10%"), linetype = "dashed")+
+  geom_hline(aes(yintercept = 0.025, color = "FF = 5%"), linetype = "dashed")+
+  scale_color_manual(name = "Thresholds", values = c("FF = 10%" = "red", "FF = 5%" = "green"))+
+  labs(title="Raw coverage for Chromosome 13 - Roche diagnostics KAPA Hyperplus",
+       x="Start Position",  # Customize x-axis label
+       y="normalized coverage ratio")+  # Customize y-axis label
+  theme_minimal()
+
+####################
+### Simulations ####
+####################
+
+simulate_deviation_first_rows <- function(data, increase, region_size = 2) {
+  modified <- (data)
+  modified <- na.omit(modified)
+  modified$ratio[1:region_size] <- modified$ratio[1:region_size] - increase
+  return(modified)
+}
+
+### duplication in random place ###
+
+simulate_deviation <- function(data, increase, region_size = 10) {
+  modified <- na.omit(data)  # Remove NA values
+  
+  # Randomly select a starting index for the deviation, ensuring it fits within the data range
+  random_index <- sample(1:(nrow(modified) - region_size + 1), 1)
+  
+  # Apply the increase to the selected region
+  modified$ratio[random_index:(random_index + region_size - 1)] <- 
+    modified$ratio[random_index:(random_index + region_size - 1)] + increase
+  
+  # Calculate the mean of the modified region (randomly chosen region)
+  region_mean <- mean(modified$ratio[random_index:(random_index + region_size - 1)], na.rm = TRUE)
+  
+  # Return the modified data and the mean of the modified region
+  return(list(modified_data = modified, region_mean = region_mean, random_index = random_index))
+}
+
+##################################
+#### Plot random duplications ####
+##################################
+
+simulated <- simulate_random_deviation(wm_18_500kb, 0.05, region_size = 10)
+
+ggplot(simulated, aes(x=start, y=ratio))+ geom_point(color="blue") + ylim(-0.25, 0.25)+
+  geom_hline(aes(yintercept = three_sds, color = "5Mb 3SD"), linetype = "dashed")+
+  scale_color_manual(name = "Thresholds", values = c("5Mb 3SD" = "green"))+
+  labs(title="Simulation for chr18 - 10% FF",
+       x="Start Position",  # Customize x-axis label
+       y="normalized coverage ratio")+  # Customize y-axis label
+  theme_minimal()
+
