@@ -3,4 +3,4 @@ Master thesis project conducted at clinical genomics SciLifeLab Solna Stockholm
 
 Code for WXC2CytoSure is available at https://github.com/denrav99/wcx2cytosure.git
 
-Fluffy v4.0 with integrated WCX2CytoSure id available at https://github.com/denrav99/fluffy.git
+Fluffy v4.0 with integrated WCX2CytoSure is available at https://github.com/denrav99/fluffy.git
