@@ -1,5 +1,5 @@
 # WCX2CytoSure-Visualization-of-structural-variants-in-prenatal-samples
-Master thesis project conducted at clinical genomics SciLifeLab Solna Stockholm. Focus on visualizing Non-Invsive Prenatal Testing (NIPT) data in CytoSure Interpret Software from Oxford Geno Technology (OGT). 
+Master thesis project conducted at clinical genomics SciLifeLab Solna Stockholm. Focus on visualizing Non-Invsive Prenatal Testing (NIPT) data in CytoSure Interpret Software from Oxford Gene Technology (OGT). 
 
 In this repository you can find links to WCX2CytoSure and its integration into the bioinformatical pipeline "Fluffy" along with scripts used for statistical analysis and evaluation.
 
