@@ -1,0 +1,62 @@
+wm.WCXpredict_bins <- read.delim("<bins.bed>")
+wm.WCXpredict_bins <- wm.WCXpredict_bins[wm.WCXpredict_bins$chr != "X", ]
+wm.WCXpredict_bins <- na.omit(wm.WCXpredict_bins)
+chrom_data <- split(wm.WCXpredict_bins, wm.WCXpredict_bins$chr)
+
+bins_with_rolling_mean <- read.delim("<rolling_mean.bed>")
+bins_with_rolling_mean <- na.omit(bins_with_rolling_mean)
+no_X_rolling_mean <- bins_with_rolling_mean[bins_with_rolling_mean$chr != "X", ]
+
+genome_sd <- sd(no_X_rolling_mean$rolling_mean)
+three_sds <- 3 * genome_sd
+
+fetal_fractions <- c(0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.12, 0.13, 0.14, 0.15)
+simulation_increases <- fetal_fractions / 2
+
+bootstrap_fn <- function(chrom_data, region_size = 10, increase, three_sds) {
+  selected_chr <- sample(names(chrom_data), 1)
+  chr_data <- chrom_data[[selected_chr]]
+  chr_data <- na.omit(chr_data)
+  
+  bootstrap_random_index <- sample(1:(nrow(chr_data) - region_size + 1), 1)
+  bootstrap_random_rows <- chr_data[bootstrap_random_index:(bootstrap_random_index + region_size - 1), ]
+  bootstrap_mean <- mean(bootstrap_random_rows$ratio, na.rm = TRUE) 
+  
+  simulation_random_index <- sample(1:(nrow(chr_data) - region_size + 1), 1)
+  simulation_chr_data <- chr_data
+  
+  simulation_chr_data$ratio[simulation_random_index:(simulation_random_index + region_size - 1)] <- 
+    simulation_chr_data$ratio[simulation_random_index:(simulation_random_index + region_size - 1)] + increase
+  
+  simulation_mean <- mean(simulation_chr_data$ratio[simulation_random_index:(simulation_random_index + region_size - 1)], na.rm = TRUE)
+  
+  if (bootstrap_mean + three_sds >= simulation_mean) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+}   
+
+p_values <- numeric(length(fetal_fractions))
+n <- 20000  
+    
+for (i in seq_along(fetal_fractions)) {
+  # Initialize a variable to count the number of TRUE returns
+  count <- 0
+  
+  # Simulate deviation for each fetal fraction increase
+  for (j in 1:n) {
+    # Check if bootstrap_fn returns TRUE or FALSE
+    if (bootstrap_fn(chrom_data, region_size = 10, 
+                     increase = simulation_increases[i], 
+                     three_sds = three_sds)) {
+      count <- count + 1
+    }
+  }
+  
+  # Calculate p-value as the proportion of TRUE values
+  p_values[i] <- count / n
+}
+
+# View the results
+print(p_values)
